@@ -7,23 +7,39 @@ class MoviesController < ApplicationController
   end
 
   def index
+    #if request.env['PATH_INFO'] == '/'
+    #  session.clear
+    #end
     @all_ratings = Movie.all_ratings
-    generatedRatings = {}
-    @all_ratings.each{ |rating| generatedRatings[rating] = 1 }
+    @initRatings = {}
+    @all_ratings.each{ |rating| @initRatings[rating] = 1 }
     @movies = Movie.all
     
     if params[:ratings]
-      generatedRatings = params[:ratings]
+      @initRatings = params[:ratings]
+      session[:ratings] = @initRatings
+    elsif session[:ratings] 
+      @initRatings = session[:ratings]
     end
     
     sort_order = params[:sort] || session[:sort]
     if sort_order == 'title'
       @movies = @movies.order(:title)
+      session[:sort] = 'title'
     elsif sort_order == 'release_date'
       @movies = @movies.order(:release_date)
+      session[:sort] = 'release_date'
+    else
+      sort_order = ''
     end
     
-    @movies = @movies.with_ratings(generatedRatings.keys)
+    @movies = @movies.with_ratings(@initRatings.keys)
+    if !params[:ratings] and session[:ratings]
+      if flash[:warning] || flash[:notice]
+        flash.keep
+      end
+      redirect_to movies_path(:sort => sort_order,:ratings => @initRatings)
+    end
   end
 
   def new

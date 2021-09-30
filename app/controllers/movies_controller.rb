@@ -7,13 +7,23 @@ class MoviesController < ApplicationController
   end
 
   def index
+    @all_ratings = Movie.all_ratings
+    generatedRatings = {}
+    @all_ratings.each{ |rating| generatedRatings[rating] = 1 }
     @movies = Movie.all
+    
+    if params[:ratings]
+      generatedRatings = params[:ratings]
+    end
+    
     sort_order = params[:sort] || session[:sort]
     if sort_order == 'title'
-      @movies = @movies.sort_by{|x| x[:title]}
-      elsif sort_order == 'release_date'
-      @movies = @movies.sort_by{|x| x[:release_date]}
+      @movies = @movies.order(:title)
+    elsif sort_order == 'release_date'
+      @movies = @movies.order(:release_date)
     end
+    
+    @movies = @movies.with_ratings(generatedRatings.keys)
   end
 
   def new
